@@ -541,6 +541,7 @@ exports.middleware = function middleware(opts) {
   opts.getParams = opts.getParams || function(ctx) { return ctx.params; };
   opts.getQuery = opts.getQuery || function(ctx) { return ctx.query; };
   opts.getBody = opts.getBody || function(ctx) { return ctx.request.body; };
+  opts.getBodyMultipart = opts.getBodyMultipart || function(ctx) { return ctx.request.body.fields; };
 
   return function (ctx, next) {
     debug('Initializing koa-bouncer');
@@ -588,6 +589,19 @@ exports.middleware = function middleware(opts) {
           vals: ctx.vals
         })
       ).get(key);
+    };
+    
+    ctx.validateBodyMultipart = function(key) {
+        return validators.get(key) || validators.set(key,
+            new Validator({
+                ctx,
+                key: key,
+                val: ctx.vals[key] === undefined
+                    ? _.get(opts.getBodyMultipart(ctx), key)
+                    : ctx.vals[key],
+                vals: ctx.vals
+            })
+        ).get(key);
     };
 
     ctx.check = function(result, tip) {
