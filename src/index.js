@@ -583,6 +583,8 @@ exports.middleware = function middleware(opts = {}) {
   opts.getParams = opts.getParams || (ctx => ctx.params)
   opts.getQuery = opts.getQuery || (ctx => ctx.query)
   opts.getBody = opts.getBody || (ctx => ctx.request.body)
+  opts.getBodyMultipartFields = opts.getBodyMultipartFields || function(ctx) { return ctx.request.fields; };
+  opts.getBodyMultipartFiles = opts.getBodyMultipartFiles || function(ctx) { return ctx.request.files; };
 
   return function(ctx, next) {
     debug('Initializing koa-bouncer')
@@ -645,6 +647,46 @@ exports.middleware = function middleware(opts = {}) {
               val:
                 ctx.vals[key] === undefined
                   ? _.get(opts.getBody(ctx), key)
+                  : ctx.vals[key],
+              vals: ctx.vals,
+            })
+          )
+          .get(key)
+      )
+    }
+
+    ctx.validateBodyMultipartFields = function(key) {
+      return (
+        validators.get(key) ||
+        validators
+          .set(
+            key,
+            new Validator({
+              ctx,
+              key: key,
+              val:
+                ctx.vals[key] === undefined
+                  ? _.get(opts.getBodyMultipartFields(ctx), key)
+                  : ctx.vals[key],
+              vals: ctx.vals,
+            })
+          )
+          .get(key)
+      )
+    }
+
+    ctx.validateBodyMultipartFiles = function(key) {
+      return (
+        validators.get(key) ||
+        validators
+          .set(
+            key,
+            new Validator({
+              ctx,
+              key: key,
+              val:
+                ctx.vals[key] === undefined
+                  ? _.get(opts.getBodyMultipartFiles(ctx), key)
                   : ctx.vals[key],
               vals: ctx.vals,
             })
